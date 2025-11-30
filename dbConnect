@@ -1,0 +1,17 @@
+package StudentMangement;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class dbConnect {
+
+    private static final String URL = "jdbc:mysql://localhost:3306/student";
+    private static final String USER = "root";
+    private static final String PASS = "root";
+
+    public Connection getConnection() throws SQLException, ClassNotFoundException {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        return DriverManager.getConnection(URL, USER, PASS);
+    }
+}
