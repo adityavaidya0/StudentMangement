@@ -1,0 +1,31 @@
+package StudentMangement;
+
+import javax.swing.table.DefaultTableModel;
+import java.sql.*;
+
+public class ResultSetTableBuilder {
+
+    public static DefaultTableModel buildTableModel(ResultSet rs) throws SQLException {
+
+        ResultSetMetaData meta = rs.getMetaData();
+        int colCount = meta.getColumnCount();
+
+        DefaultTableModel model = new DefaultTableModel();
+
+        // Add column names
+        for (int i = 1; i <= colCount; i++) {
+            model.addColumn(meta.getColumnName(i));
+        }
+
+        // Add row data
+        while (rs.next()) {
+            Object[] row = new Object[colCount];
+            for (int i = 1; i <= colCount; i++) {
+                row[i - 1] = rs.getObject(i);
+            }
+            model.addRow(row);
+        }
+
+        return model;
+    }
+}
