@@ -1,1 +1,300 @@
+package StudentMangement;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.*;
+
+public class AppGUI extends JFrame implements ActionListener {
+
+    private final JTextField studentIdField, firstNameField, lastNameField,
+            majorField, phoneField, gpaField, dobField;
+
+    private final JButton addButton, displayButton, sortButton, searchButton, modifyButton;
+
+    private Connection conn;
+    private Statement stmt;
+
+    // ----------------- CONSTRUCTOR -----------------
+    public AppGUI() {
+
+        setTitle("Student Management System");
+
+        setSize(600, 500);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        Font font = new Font("Segoe UI", Font.PLAIN, 16);
+
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+
+        JLabel label;
+
+        // Student ID
+        label = new JLabel("Student ID:");
+        label.setFont(font);
+        panel.add(label, gbc);
+
+        gbc.gridx = 1;
+        studentIdField = new JTextField(15);
+        studentIdField.setFont(font);
+        panel.add(studentIdField, gbc);
+
+        // First Name
+        gbc.gridy++;
+        gbc.gridx = 0;
+        label = new JLabel("First Name:");
+        label.setFont(font);
+        panel.add(label, gbc);
+
+        gbc.gridx = 1;
+        firstNameField = new JTextField(15);
+        firstNameField.setFont(font);
+        panel.add(firstNameField, gbc);
+
+        // Last Name
+        gbc.gridy++;
+        gbc.gridx = 0;
+        label = new JLabel("Last Name:");
+        label.setFont(font);
+        panel.add(label, gbc);
+
+        gbc.gridx = 1;
+        lastNameField = new JTextField(15);
+        lastNameField.setFont(font);
+        panel.add(lastNameField, gbc);
+
+        // Major
+        gbc.gridy++;
+        gbc.gridx = 0;
+        label = new JLabel("Major:");
+        label.setFont(font);
+        panel.add(label, gbc);
+
+        gbc.gridx = 1;
+        majorField = new JTextField(15);
+        majorField.setFont(font);
+        panel.add(majorField, gbc);
+
+        // Phone
+        gbc.gridy++;
+        gbc.gridx = 0;
+        label = new JLabel("Phone:");
+        label.setFont(font);
+        panel.add(label, gbc);
+
+        gbc.gridx = 1;
+        phoneField = new JTextField(15);
+        phoneField.setFont(font);
+        panel.add(phoneField, gbc);
+
+        // GPA
+        gbc.gridy++;
+        gbc.gridx = 0;
+        label = new JLabel("GPA:");
+        label.setFont(font);
+        panel.add(label, gbc);
+
+        gbc.gridx = 1;
+        gpaField = new JTextField(15);
+        gpaField.setFont(font);
+        panel.add(gpaField, gbc);
+
+        // DOB
+        gbc.gridy++;
+        gbc.gridx = 0;
+        label = new JLabel("Date of Birth (yyyy-mm-dd):");
+        label.setFont(font);
+        panel.add(label, gbc);
+
+        gbc.gridx = 1;
+        dobField = new JTextField(15);
+        dobField.setFont(font);
+        panel.add(dobField, gbc);
+
+        // Buttons row
+        gbc.gridy++;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+
+        JPanel btnPanel = new JPanel(new GridLayout(1, 5, 10, 10));
+
+        addButton = new JButton("Add");
+        displayButton = new JButton("Display");
+        sortButton = new JButton("Sort");
+        searchButton = new JButton("Search");
+        modifyButton = new JButton("Modify");
+
+        JButton[] buttons = {addButton, displayButton, sortButton, searchButton, modifyButton};
+
+        for (JButton b : buttons) {
+            b.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            b.setFocusPainted(false);
+            b.setBackground(new Color(52, 152, 219));
+            b.setForeground(Color.WHITE);
+            b.addActionListener(this);
+            btnPanel.add(b);
+        }
+
+        panel.add(btnPanel, gbc);
+
+        add(panel);
+        setVisible(true);
+
+        connectDatabase();
+    }
+
+    // ----------------- DATABASE CONNECTION -----------------
+    private void connectDatabase() {
+        try {
+            dbConnect db = new dbConnect();
+            conn = db.getConnection();
+            stmt = conn.createStatement();
+        } catch (Exception e) {
+            System.out.println("database connection failed");
+        }
+    }
+
+    // ----------------- BUTTON HANDLING -----------------
+    @Override
+    public void actionPerformed(ActionEvent e) {
+
+        // ADD STUDENT
+        if (e.getSource() == addButton) {
+            String sql = "INSERT INTO sdata VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                ps.setString(1, studentIdField.getText());
+                ps.setString(2, firstNameField.getText());
+                ps.setString(3, lastNameField.getText());
+                ps.setString(4, majorField.getText());
+                ps.setString(5, phoneField.getText());
+                ps.setString(6, gpaField.getText());
+                ps.setString(7, dobField.getText());
+
+                ps.executeUpdate();
+                JOptionPane.showMessageDialog(null, "Student Added!");
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        // DISPLAY STUDENTS
+        // DISPLAY STUDENTS
+        else if (e.getSource() == displayButton) {
+            try {
+                String query = "SELECT * FROM sdata";
+                ResultSet rs = stmt.executeQuery(query);
+
+                JTable table = new JTable(ResultSetTableBuilder.buildTableModel(rs));
+                JScrollPane scroll = new JScrollPane(table);
+
+                JOptionPane.showMessageDialog(null, scroll, "All Students", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+// SORT STUDENTS (ASCENDING)
+        else if (e.getSource() == sortButton) {
+
+            // Your actual SQL column names
+            String[] options = {
+                    "studentIdField", "firstNameField", "lastNameField",
+                    "majorField", "phoneField", "gpaField", "dobField"
+            };
+
+            String column = (String) JOptionPane.showInputDialog(
+                    null,
+                    "Sort By:",
+                    "Sort",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    options,
+                    options[0]
+            );
+
+            if (column == null) return;
+
+            try {
+                // SORT in ascending format
+                String query = "SELECT * FROM sdata ORDER BY " + column + " ASC";
+
+                ResultSet rs = stmt.executeQuery(query);
+
+                JTable table = new JTable(ResultSetTableBuilder.buildTableModel(rs));
+                JScrollPane scroll = new JScrollPane(table);
+
+                JOptionPane.showMessageDialog(null, scroll, "Sorted Data (ASC)", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+
+
+        // SEARCH
+        else if (e.getSource() == searchButton) {
+            String[] fields = {"studentIdField", "last_name", "major"};
+
+            String column = (String) JOptionPane.showInputDialog(null, "Search By:",
+                    "Search", JOptionPane.PLAIN_MESSAGE, null, fields, fields[0]);
+
+            if (column == null) return;
+
+            String term = JOptionPane.showInputDialog("Enter search term:");
+
+            try {
+                ResultSet rs = stmt.executeQuery("SELECT * FROM sdata WHERE " + column +
+                        " LIKE '%" + term + "%'");
+                JTable table = new JTable(ResultSetTableBuilder.buildTableModel(rs));
+                JOptionPane.showMessageDialog(null, new JScrollPane(table));
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        // MODIFY
+        else if (e.getSource() == modifyButton) {
+
+            String id = JOptionPane.showInputDialog("Enter Student ID:");
+
+            try {
+                ResultSet rs = stmt.executeQuery("SELECT * FROM sdata WHERE studentIdField='" + id + "'");
+
+                if (!rs.next()) {
+                    JOptionPane.showMessageDialog(null, "Student Not Found");
+                    return;
+                }
+
+                String[] fields = {
+                        "studentIdField", "firstNameField", "lastNameField","majorField",
+                        "phoneField", "gpaField", "dobField"
+                };
+
+                String column = (String) JOptionPane.showInputDialog(null, "Modify Field:",
+                        "Modify", JOptionPane.PLAIN_MESSAGE, null, fields, fields[0]);
+
+                String newVal = JOptionPane.showInputDialog("Enter new value:");
+
+                stmt.executeUpdate("UPDATE sdata SET " + column +
+                        "='" + newVal + "' WHERE studentIdField='" + id + "'");
+
+                JOptionPane.showMessageDialog(null, "Updated Successfully!");
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+}
