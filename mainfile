@@ -1,1 +1,13 @@
+package StudentMangement;
+
+import javax.swing.*;
+
+public class App {
+    public static void main(String[] args) {
+        AppGUI appGUI=new AppGUI();
+        appGUI.pack();
+        appGUI.setVisible(true);
+        appGUI.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+}
 
