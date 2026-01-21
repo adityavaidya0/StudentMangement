@@ -1,0 +1,43 @@
+package StudentMangement;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class Dashboard extends JFrame {
+
+    public Dashboard() {
+
+        setTitle("Admin Dashboard");
+        setSize(500, 350);
+        setLocationRelativeTo(null);
+        setLayout(null);
+
+        JLabel label = new JLabel("Welcome to Admin Dashboard");
+        label.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        label.setBounds(90, 40, 400, 40);
+        add(label);
+
+        JButton manageStudents = new JButton("Open Student Management");
+        manageStudents.setBounds(120, 120, 250, 35);
+        add(manageStudents);
+
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.setBounds(180, 200, 150, 35);
+        add(logoutBtn);
+
+        // OPEN Student Management
+        manageStudents.addActionListener(e -> {
+            new AppGUI();
+            dispose();
+        });
+
+        // LOGOUT → back to login page
+        logoutBtn.addActionListener(e -> {
+            new LoginGUI();
+            dispose();
+        });
+
+        setVisible(true);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+    }
+}
