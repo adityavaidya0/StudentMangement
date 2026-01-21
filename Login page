@@ -1,0 +1,298 @@
+package StudentMangement;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.*;
+
+public class LoginGUI extends JFrame implements ActionListener {
+
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JButton loginButton, changeButton, forgotButton;
+
+    private Connection conn;
+
+    public LoginGUI() {
+
+        setTitle("Admin Login");
+        setSize(420, 360);
+        setLocationRelativeTo(null);
+        setResizable(false);
+        setLayout(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        usernameField = new JTextField();
+        usernameField.setBounds(150, 80, 200, 28);
+        add(usernameField);
+
+        JLabel passLabel = new JLabel("Password:");
+        passLabel.setBounds(50, 130, 100, 25);
+        add(passLabel);
+
+        passwordField = new JPasswordField();
+        passwordField.setBounds(150, 130, 200, 28);
+        add(passwordField);
+
+        loginButton = new JButton("Login");
+        loginButton.setBounds(150, 180, 200, 35);
+        loginButton.addActionListener(this);
+        add(loginButton);
+
+        changeButton = new JButton("Change Credentials");
+        changeButton.setBounds(150, 225, 200, 28);
+        changeButton.addActionListener(e -> openChangeCredentials());
+        add(changeButton);
+
+        forgotButton = new JButton("Forgot Password?");
+        forgotButton.setBounds(150, 265, 200, 25);
+        forgotButton.addActionListener(e -> openForgotPassword());
+        add(forgotButton);
+
+        connectDatabase();
+        setVisible(true);
+    }
+
+    private void connectDatabase() {
+        try {
+            dbConnect db = new dbConnect();
+            conn = db.getConnection();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Database Connection Failed");
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        String user = usernameField.getText();
+        String pass = new String(passwordField.getPassword());
+
+        try {
+            String query = "SELECT * FROM admin WHERE username=? AND password=?";
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, user);
+            ps.setString(2, pass);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                JOptionPane.showMessageDialog(this, "Login Successful!");
+                new Dashboard();
+                dispose();
+            } else {
+                JOptionPane.showMessageDialog(this, "Invalid Username or Password");
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    // ------- CHANGE USERNAME/PASSWORD WINDOW -------
+    public void openChangeCredentials() {
+
+        JFrame frame = new JFrame("Change Credentials");
+        frame.setSize(430, 380);
+        frame.setLayout(null);
+        frame.setLocationRelativeTo(null);
+
+        JLabel u1 = new JLabel("Old Username:");
+        u1.setBounds(40, 40, 120, 25);
+        frame.add(u1);
+
+        JTextField oldUserField = new JTextField();
+        oldUserField.setBounds(170, 40, 180, 28);
+        frame.add(oldUserField);
+
+        JLabel p1 = new JLabel("Old Password:");
+        p1.setBounds(40, 90, 120, 25);
+        frame.add(p1);
+
+        JPasswordField oldPassField = new JPasswordField();
+        oldPassField.setBounds(170, 90, 180, 28);
+        frame.add(oldPassField);
+
+        JLabel u2 = new JLabel("New Username:");
+        u2.setBounds(40, 140, 120, 25);
+        frame.add(u2);
+
+        JTextField newUserField = new JTextField();
+        newUserField.setBounds(170, 140, 180, 28);
+        frame.add(newUserField);
+
+        JLabel p2 = new JLabel("New Password:");
+        p2.setBounds(40, 190, 120, 25);
+        frame.add(p2);
+
+        JPasswordField newPassField = new JPasswordField();
+        newPassField.setBounds(170, 190, 180, 28);
+        frame.add(newPassField);
+
+        JButton updateBtn = new JButton("Update");
+        updateBtn.setBounds(170, 240, 180, 35);
+        frame.add(updateBtn);
+
+        JButton backBtn = new JButton("Back to Login");
+        backBtn.setBounds(170, 290, 180, 30);
+        frame.add(backBtn);
+
+        backBtn.addActionListener(e -> {
+            new LoginGUI();
+            frame.dispose();
+        });
+
+        updateBtn.addActionListener(ev -> {
+
+            try {
+                String sql = "UPDATE admin SET username=?, password=? WHERE username=? AND password=?";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, newUserField.getText());
+                ps.setString(2, new String(newPassField.getPassword()));
+                ps.setString(3, oldUserField.getText());
+                ps.setString(4, new String(oldPassField.getPassword()));
+
+                if (ps.executeUpdate() > 0) {
+                    JOptionPane.showMessageDialog(frame, "Updated Successfully! Returning to login...");
+                    new LoginGUI();
+                    frame.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Incorrect old username/password!");
+                }
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    // --------------- FORGOT PASSWORD FEATURE ---------------
+    public void openForgotPassword() {
+
+        JFrame frame = new JFrame("Forgot Password");
+        frame.setSize(430, 330);
+        frame.setLocationRelativeTo(null);
+        frame.setLayout(null);
+
+        JLabel askUser = new JLabel("Enter Username:");
+        askUser.setBounds(40, 40, 150, 25);
+        frame.add(askUser);
+
+        JTextField userField = new JTextField();
+        userField.setBounds(170, 40, 180, 28);
+        frame.add(userField);
+
+        JButton nextBtn = new JButton("Next");
+        nextBtn.setBounds(170, 90, 180, 30);
+        frame.add(nextBtn);
+
+        nextBtn.addActionListener(e -> {
+            try {
+                String sql = "SELECT * FROM admin WHERE username=?";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, userField.getText());
+
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    frame.dispose();
+                    openSecurityQuestion(userField.getText(), rs.getString("security_question"));
+                } else {
+                    JOptionPane.showMessageDialog(frame, "User not found!");
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    public void openSecurityQuestion(String username, String question) {
+
+        JFrame frame = new JFrame("Security Question");
+        frame.setSize(430, 320);
+        frame.setLocationRelativeTo(null);
+        frame.setLayout(null);
+
+        JLabel qLabel = new JLabel("Security Question:");
+        qLabel.setBounds(40, 40, 150, 25);
+        frame.add(qLabel);
+
+        JLabel questionLabel = new JLabel(question);
+        questionLabel.setBounds(40, 80, 350, 25);
+        frame.add(questionLabel);
+
+        JTextField answerField = new JTextField();
+        answerField.setBounds(40, 120, 350, 28);
+        frame.add(answerField);
+
+        JButton resetBtn = new JButton("Reset Password");
+        resetBtn.setBounds(140, 180, 150, 35);
+        frame.add(resetBtn);
+
+        resetBtn.addActionListener(e -> {
+
+            try {
+                String sql = "SELECT security_answer FROM admin WHERE username=?";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, username);
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next() && rs.getString("security_answer").equalsIgnoreCase(answerField.getText())) {
+
+                    frame.dispose();
+                    openPasswordReset(username);
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Wrong Answer!");
+                }
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    public void openPasswordReset(String username) {
+
+        JFrame frame = new JFrame("Reset Password");
+        frame.setSize(430, 280);
+        frame.setLocationRelativeTo(null);
+        frame.setLayout(null);
+
+        JLabel pLabel = new JLabel("New Password:");
+        pLabel.setBounds(40, 50, 150, 25);
+        frame.add(pLabel);
+
+        JPasswordField newPass = new JPasswordField();
+        newPass.setBounds(170, 50, 180, 28);
+        frame.add(newPass);
+
+        JButton done = new JButton("Update");
+        done.setBounds(170, 120, 180, 35);
+        frame.add(done);
+
+        done.addActionListener(e -> {
+            try {
+                String sql = "UPDATE admin SET password=? WHERE username=?";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, new String(newPass.getPassword()));
+                ps.setString(2, username);
+
+                if (ps.executeUpdate() > 0) {
+                    JOptionPane.showMessageDialog(frame, "Password Reset Successfully!");
+                    frame.dispose();
+                    new LoginGUI();
+                }
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        frame.setVisible(true);
+    }
+}
